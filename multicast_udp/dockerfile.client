@@ -1,0 +1,9 @@
+FROM golang:1.24.6 AS builder
+WORKDIR /app
+COPY client/ .
+RUN go build -o client udp_client.go
+
+FROM debian:bookworm-slim
+WORKDIR /app
+COPY --from=builder /app/client .
+CMD ["./client"]

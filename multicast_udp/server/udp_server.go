@@ -14,7 +14,7 @@ import (
 func main() {
 	group := "239.0.0.222"         // IPv4 multicast group (224.0.0.0 - 239.255.255.255)
 	port := 9999                   // UDP port
-	ifaceName := "Wi-Fi"           // Interface name to send on (e.g., eth0, en0). If empty, auto-select.
+	ifaceName := "eth0"            // Interface name to send on (e.g., eth0, en0). If empty, auto-select.
 	ttl := 1                       // Multicast TTL (hops)
 	interval := time.Second        // Send interval
 	loop := true                   // Loop back multicast to local host

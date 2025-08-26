@@ -1,19 +1,22 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"golang.org/x/net/ipv4"
+	"golang.org/x/sys/unix"
 )
 
 func main() {
 	group := "239.0.0.222" // IPv4 multicast group to join
 	port := 9999           // Multicast UDP port
-	ifaceName := "Wi-Fi"   // Interface to join on (e.g., eth0, en0). If empty, auto-select
+	ifaceName := "eth0"    // Interface to join on (e.g., eth0, en0). If empty, auto-select
 	buffSize := 1024       //  Recieve buffer size (bytes)
 
 	ip := net.ParseIP(group)
@@ -28,7 +31,8 @@ func main() {
 	}
 
 	addr := fmt.Sprintf("0.0.0.0:%d", port)
-	pc, err := net.ListenPacket("udp4", addr)
+	lc := net.ListenConfig{Control: reuseControl}
+	pc, err := lc.ListenPacket(context.Background(), "udp4", addr)
 	if err != nil {
 		log.Fatalf("ListenPacket(%s): %v", addr, err)
 	}
@@ -70,4 +74,15 @@ func main() {
 			log.Printf("recv %dB from %s -> group=%s: %s\\n", n, src.String(), dst, string(buffer[:n]))
 		}
 	}
+}
+
+func reuseControl(network, address string, c syscall.RawConn) error {
+	var err error
+	c.Control(func(fd uintptr) {
+		// Allow multiple sockets to bind same addr:port
+		if e := unix.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); e != nil && err == nil {
+			err = e
+		}
+	})
+	return err
 }
